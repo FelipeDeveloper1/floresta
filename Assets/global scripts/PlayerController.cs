@@ -19,6 +19,7 @@ public class PlayerController : MonoBehaviour
 	private bool isDashing;
 	private bool canDash;//Criamos uma variável para definir a duração de pausa entre um dash e outro (obs: como ela é pública, significa que podemos mudar o inserir dela diretamente na unity)
 	public shield shield;
+	public Ghost ghost;
 	//Variáveis de Parachute
 	public Parachute parachute; //Usamos para chamar o script de Parachute no script do player
 
@@ -27,14 +28,13 @@ public class PlayerController : MonoBehaviour
 	[SerializeField] private Transform groundCheck; //Usamos para definir o Ground Check (armazenamos o ground check da Unity aqui)
 	[SerializeField] private LayerMask groundLayer; //Usamos para definir o Ground Layer (armazenamos o ground layer da Unity aqui)
 	[SerializeField] private Animator animator; //Usamos para ativaras ferramentas do Animator (definimos qual Animator será usada na Unity)
+
   	private void Start()
     {
-		shield.guardShield();	
+		shield.guardShield();
 	}
 	private void Update()
 	{
-	
-
 		horizontal = Input.GetAxisRaw("Horizontal"); //Definimos o valor da variável horizontal
 
 		if (Input.GetButtonDown ("Jump")) { //Se o botão pulo for pressionado 
@@ -72,7 +72,6 @@ public class PlayerController : MonoBehaviour
 		Glide (); //Registramos o método glide no void update par ele ser ativado quando chamado
 		Attack (); //Registramos o método attack no void update par ele ser ativado quando chamado
 		Block();
-		Dash();
 	}
 
 	private void OnCollisionEnter2D(Collision2D collision) //Usamos para armazenar funções que envolvem colisão
@@ -105,6 +104,8 @@ public class PlayerController : MonoBehaviour
 		{
 			animator.SetBool ("Run", false); //A animação de correr é barrada. Isso é importante para impedir que o personagem corra infinitamente após sua movimentação horizontal ser ativada
 		}
+
+		Dash();
 	}
 
 	public bool IsGrounded() //Se o personagem estiver no chão (escolhi criar uma outra variável privada para averiguar se o player está no chão, pois eu queria uma variável que tivesse um registro diferente de infloor)
@@ -141,11 +142,12 @@ public class PlayerController : MonoBehaviour
 			}
 		}
 	}
-	void Dash() {
+	private void Dash() {
         if (Input.GetKeyDown(KeyCode.LeftShift) && canDash)
         {
+			ghost.makeGhost = true;
             isDashing = true;
-            canDash = true;
+            canDash = false;
             dashDir = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
             if (dashDir == Vector2.zero)
             {
@@ -156,20 +158,21 @@ public class PlayerController : MonoBehaviour
 
         if (isDashing)
         {
+			this.parachute.CloseParachute();
             rb.velocity = dashDir.normalized * dashVel;
             return;
-        }
-
-        if (infloor)
-        {
-            canDash = true;
         }
 
         IEnumerator stopDash()
         {
             yield return new WaitForSeconds(dashTime);
+			ghost.makeGhost = false;
             isDashing = false;
             rb.velocity = Vector2.zero;
+			if (infloor){
+				yield return new WaitForSeconds(dashTime);
+				canDash = true;
+			}
         }
     }	
 
@@ -177,6 +180,7 @@ public class PlayerController : MonoBehaviour
 
 		if (Input.GetButtonDown ("Fire1")) { //Se o input Fire1 da Unity for pressionado (no caso o ctrl esquerdo ou lado esquerdo do mouse)
 			animator.SetBool ("Attack", true); //Ativamos a animação de ataque
+			this.shield.guardShield();
 		} 
 		if (Input.GetButtonUp ("Fire1")) { //Se o input Fire1 da Unity for solto (no caso o ctrl esquerdo ou lado esquerdo do mouse)
 			animator.SetBool ("Attack", false); //Desativamos a animação de ataque
