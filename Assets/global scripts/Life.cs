@@ -17,7 +17,7 @@ public class Life : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        currentLife = maxLife;
+        currentLife = 1;
         invincible = false;
         baseDamage = damage;
     }
@@ -57,6 +57,14 @@ public class Life : MonoBehaviour
 			gameObject.GetComponent<PlayerController> ().enabled = false; //Deixo o componente Player como falso
 			gameObject.GetComponent<Animator> ().SetBool ("Jump", false); //Impeço que o player pule enquanto está morto
 			Invoke ("LoadScene", 1f); //Reinicio a cena, fazendo o player voltar depois de 1 segundo de morto
+        }
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if(collision.gameObject.tag == "Safe")
+        {
+            currentLife = maxLife;
         }
     }
 
